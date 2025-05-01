@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, send_file
 import json
 import datetime
 import os
@@ -40,6 +40,10 @@ def receive_data():
         return jsonify({'status': 'success'}), 200
     else:
         return jsonify({'error': 'No liters value'}), 400
+
+@app.route('/data.json')
+def serve_data():
+    return send_file(DATA_FILE, mimetype='application/json')
 
 # Запуск сервера
 if __name__ == '__main__':
