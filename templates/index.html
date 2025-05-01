@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Мониторинг расхода воды</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 30px;
+            background-color: #f0f0f0;
+        }
+        h2 {
+            text-align: center;
+        }
+        canvas {
+            max-width: 800px;
+            margin: auto;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <h2>График расхода воды (л)</h2>
+    <canvas id="chart" width="800" height="400"></canvas>
+
+    <script>
+        const rawData = {{ data | tojson }};
+        const labels = rawData.map(item => item.timestamp);
+        const values = rawData.map(item => item.liters);
+
+        const ctx = document.getElementById('chart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Расход воды (литры)',
+                    data: values,
+                    borderColor: 'blue',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        ticks: {
+                            autoSkip: true,
+                            maxTicksLimit: 10
+                        }
+                    },
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
