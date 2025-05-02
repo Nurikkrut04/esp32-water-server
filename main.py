@@ -2,6 +2,8 @@ from flask import Flask, request, jsonify, render_template, send_file
 import json
 import datetime
 import os
+import csv
+from flask import Response
 
 app = Flask(__name__)
 
@@ -50,6 +52,26 @@ def reset_data():
     with open(DATA_FILE, 'w') as f:
         json.dump([], f)
     return "<h3>Данные успешно очищены!</h3>"
+
+@app.route('/export', methods=['GET'])
+def export_csv():
+    data = load_data()
+
+    # Создаем CSV в памяти
+    output = []
+    output.append(['Время', 'Литры'])
+
+    for entry in data:
+        output.append([entry['time'], entry['liters']])
+
+    # Преобразуем в строку
+    csv_data = '\n'.join([','.join(map(str, row)) for row in output])
+
+    return Response(
+        csv_data,
+        mimetype='text/csv',
+        headers={'Content-Disposition': 'attachment; filename=water_data.csv'}
+    )
 
 # Запуск сервера
 if __name__ == '__main__':
