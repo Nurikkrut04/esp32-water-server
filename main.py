@@ -27,19 +27,26 @@ def index():
     return render_template('index.html', data=data)
 
 # Получение данных от ESP32
-@app.route('/data', methods=['POST'])
-def receive_data():
-    content = request.json
-    liters = content.get('liters')
-    timestamp = content.get('timestamp', datetime.datetime.now().isoformat())
-    
-    if liters is not None:
-        data = load_data()
-        data.append({'liters': liters, 'timestamp': timestamp})
-        save_data(data)
-        return jsonify({'status': 'success'}), 200
-    else:
-        return jsonify({'error': 'No liters value'}), 400
+@app.route("/post", methods=["POST"])
+def post_data():
+    content = request.get_json()
+
+    # Проверка ключа
+    if content.get("key") != SECRET_KEY:
+        return jsonify({"status": "unauthorized"}), 403
+
+    # Извлечение данных
+    time = content.get("time")
+    liters = content.get("liters")
+
+    if time and liters:
+        with open("data.json", "r+", encoding="utf-8") as f:
+            data = json.load(f)
+            data.append({"time": time, "liters": liters})
+            f.seek(0)
+            json.dump(data, f, indent=2, ensure_ascii=False)
+        return jsonify({"status": "ok"}), 200
+    return jsonify({"status": "invalid data"}), 400
 
 @app.route('/data.json')
 def serve_data():
