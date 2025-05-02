@@ -8,30 +8,78 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
-      background-color: #f8f9fa;
       font-family: 'Segoe UI', sans-serif;
+      background-color: #f1f3f6;
+      color: #212529;
+      transition: background-color 0.3s, color 0.3s;
     }
+
+    body.dark-mode {
+      background-color: #121212;
+      color: #f8f9fa;
+    }
+
     .stat-box {
-      border-radius: 10px;
+      border-radius: 12px;
       padding: 20px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
       background-color: white;
+      box-shadow: 0 0 12px rgba(0,0,0,0.05);
+      transition: background-color 0.3s, transform 0.3s;
     }
+
+    .dark-mode .stat-box {
+      background-color: #1e1e1e;
+      color: #f8f9fa;
+    }
+
+    .stat-box:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 0 18px rgba(0,0,0,0.08);
+    }
+
     canvas {
-      background-color: white;
-      border-radius: 10px;
-      padding: 10px;
+      background: linear-gradient(to bottom, #ffffff, #eef3fb);
+      border-radius: 12px;
+      padding: 12px;
     }
-    .status-indicator {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      display: inline-block;
-      margin-right: 8px;
+
+    .dark-mode canvas {
+      background: linear-gradient(to bottom, #1e1e1e, #2a2a2a);
+    }
+
+    .btn {
+      transition: all 0.3s ease;
+    }
+
+    .btn-danger:hover {
+      background-color: #c82333;
+    }
+
+    .btn-success:hover {
+      background-color: #218838;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 50px;
+      padding: 20px;
+      font-size: 0.9rem;
+      color: gray;
+    }
+
+    .icon-title {
+      font-size: 1.5rem;
+    }
+
+    .mode-toggle {
+      position: absolute;
+      top: 20px;
+      left: 20px;
     }
   </style>
 </head>
 <body class="container py-5">
+  <button class="btn btn-outline-secondary mode-toggle" onclick="toggleMode()">🌗</button>
   <h1 class="text-center mb-4">💧 График расхода воды (л)</h1>
 
   <div class="row mb-4 text-center">
@@ -55,37 +103,38 @@
     </div>
   </div>
 
-  <!-- Новые виджеты -->
-  <div class="row mb-4">
-    <div class="col-md-3 mb-3">
-      <div class="stat-box text-center">
+  <div class="row mb-4 text-center">
+    <div class="col-md-4 mb-3">
+      <div class="stat-box">
         <h6>📌 Самый большой расход</h6>
-        <h4 id="maxLiters">—</h4>
+        <h4 id="maxLiters">— л</h4>
       </div>
     </div>
-    <div class="col-md-3 mb-3">
-      <div class="stat-box text-center">
+    <div class="col-md-4 mb-3">
+      <div class="stat-box">
         <h6>🔻 Самый маленький</h6>
-        <h4 id="minLiters">—</h4>
+        <h4 id="minLiters">— л</h4>
       </div>
     </div>
-    <div class="col-md-3 mb-3">
-      <div class="stat-box text-center">
+    <div class="col-md-4 mb-3">
+      <div class="stat-box">
         <h6>⏱ Интервал (мин)</h6>
-        <h4 id="interval">—</h4>
-      </div>
-    </div>
-    <div class="col-md-3 mb-3">
-      <div class="stat-box text-center">
-        <h6>📅 Измерений всего</h6>
-        <h4 id="count">0</h4>
+        <h4 id="duration">— мин</h4>
       </div>
     </div>
   </div>
 
-  <div class="mb-5">
-    <canvas id="waterChart" height="100"></canvas>
+  <div class="text-center mb-3">
+    <div class="stat-box d-inline-block">
+      <h6>📅 Измерений всего</h6>
+      <h4 id="count">0</h4>
+    </div>
   </div>
+
+  <div class="mb-5">
+    <canvas id="waterChart" height="120"></canvas>
+  </div>
+
   <div class="text-end mb-3">
     <a href="/reset" class="btn btn-danger" onclick="return confirm('Вы уверены, что хотите очистить все данные?')">
       🗑 Очистить данные
@@ -94,6 +143,7 @@
       📤 Экспорт в CSV
     </a>
   </div>
+
   <h3 class="mb-3">📋 История измерений</h3>
   <div class="table-responsive">
     <table class="table table-striped">
@@ -103,11 +153,11 @@
           <th scope="col">Литры</th>
         </tr>
       </thead>
-      <tbody id="dataTable">
-        <!-- данные будут подставлены JS -->
-      </tbody>
+      <tbody id="dataTable"></tbody>
     </table>
   </div>
+
+  <div class="footer">Разработано Nurislam 2025©</div>
 
   <script>
     let chart;
@@ -123,22 +173,6 @@
       return d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
     }
 
-    function updateExtraWidgets(data) {
-      const liters = data.map(e => parseFloat(e.liters));
-      if (liters.length === 0) return;
-      const max = Math.max(...liters);
-      const min = Math.min(...liters);
-      const count = liters.length;
-      const first = new Date(data[0].time);
-      const last = new Date(data.at(-1).time);
-      const interval = Math.round((last - first) / 60000);
-
-      document.getElementById('maxLiters').innerText = max.toFixed(2) + ' л';
-      document.getElementById('minLiters').innerText = min.toFixed(2) + ' л';
-      document.getElementById('interval').innerText = interval + ' мин';
-      document.getElementById('count').innerText = count;
-    }
-
     function updateUI(data) {
       const labels = [];
       const values = [];
@@ -152,14 +186,23 @@
         labels.push(time);
         values.push(val);
         sum += val;
-
-        const row = `<tr><td>${time}</td><td>${val.toFixed(2)}</td></tr>`;
-        table.innerHTML += row;
+        table.innerHTML += `<tr><td>${time}</td><td>${val.toFixed(2)}</td></tr>`;
       });
 
+      const avg = data.length ? (sum / data.length).toFixed(2) : '—';
+      const max = Math.max(...values).toFixed(2);
+      const min = Math.min(...values).toFixed(2);
+      const duration = data.length > 1
+        ? Math.round((new Date(data.at(-1).time) - new Date(data[0].time)) / 60000)
+        : 0;
+
       document.getElementById('totalLiters').innerText = sum.toFixed(2) + ' л';
-      document.getElementById('avgLiters').innerText = data.length ? (sum / data.length).toFixed(2) + ' л' : '— л';
+      document.getElementById('avgLiters').innerText = avg + ' л';
       document.getElementById('lastTime').innerText = labels.at(-1) || '—';
+      document.getElementById('count').innerText = data.length;
+      document.getElementById('maxLiters').innerText = max + ' л';
+      document.getElementById('minLiters').innerText = min + ' л';
+      document.getElementById('duration').innerText = duration + ' мин';
 
       if (!chart) {
         const ctx = document.getElementById('waterChart').getContext('2d');
@@ -188,8 +231,10 @@
         chart.data.datasets[0].data = values;
         chart.update();
       }
+    }
 
-      updateExtraWidgets(data);
+    function toggleMode() {
+      document.body.classList.toggle('dark-mode');
     }
 
     async function refresh() {
