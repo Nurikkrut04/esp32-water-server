@@ -45,6 +45,12 @@ def receive_data():
 def serve_data():
     return send_file(DATA_FILE, mimetype='application/json')
 
+@app.route('/reset', methods=['GET'])
+def reset_data():
+    with open(DATA_FILE, 'w') as f:
+        json.dump([], f)
+    return "<h3>Данные успешно очищены!</h3>"
+
 # Запуск сервера
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
