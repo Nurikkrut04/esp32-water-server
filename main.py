@@ -56,7 +56,7 @@ def reset_data():
 @app.route('/export', methods=['GET'])
 def export_csv():
     data = load_data()
-
+    
     # Создаем CSV в памяти
     output = []
     output.append(['Время', 'Литры'])
@@ -67,9 +67,12 @@ def export_csv():
     # Преобразуем в строку
     csv_data = '\n'.join([','.join(map(str, row)) for row in output])
 
+    # Добавляем BOM в начало для Excel
+    csv_data = '\ufeff' + csv_data
+
     return Response(
         csv_data,
-        mimetype='text/csv',
+        mimetype='text/csv; charset=utf-8',
         headers={'Content-Disposition': 'attachment; filename=water_data.csv'}
     )
 
