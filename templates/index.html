@@ -7,6 +7,7 @@
   <link rel="icon" type="image/png" href="/static/favicon.png">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -68,10 +69,6 @@
       color: gray;
     }
 
-    .icon-title {
-      font-size: 1.5rem;
-    }
-
     .mode-toggle {
       position: absolute;
       top: 20px;
@@ -87,52 +84,19 @@
   </h1>
 
   <div class="row mb-4 text-center">
-    <div class="col-md-4 mb-3">
-      <div class="stat-box">
-        <h5>Общий расход</h5>
-        <h2 id="totalLiters">0.0 л</h2>
-      </div>
-    </div>
-    <div class="col-md-4 mb-3">
-      <div class="stat-box">
-        <h5>Последнее измерение</h5>
-        <h2 id="lastTime">—</h2>
-      </div>
-    </div>
-    <div class="col-md-4 mb-3">
-      <div class="stat-box">
-        <h5>Средний расход</h5>
-        <h2 id="avgLiters">— л</h2>
-      </div>
-    </div>
+    <div class="col-md-4 mb-3"><div class="stat-box"><h5>Общий расход</h5><h2 id="totalLiters">0.0 л</h2></div></div>
+    <div class="col-md-4 mb-3"><div class="stat-box"><h5>Последнее измерение</h5><h2 id="lastTime">—</h2></div></div>
+    <div class="col-md-4 mb-3"><div class="stat-box"><h5>Средний расход</h5><h2 id="avgLiters">— л</h2></div></div>
   </div>
 
   <div class="row mb-4 text-center">
-    <div class="col-md-4 mb-3">
-      <div class="stat-box">
-        <h6>📌 Самый большой расход</h6>
-        <h4 id="maxLiters">— л</h4>
-      </div>
-    </div>
-    <div class="col-md-4 mb-3">
-      <div class="stat-box">
-        <h6>🔻 Самый маленький</h6>
-        <h4 id="minLiters">— л</h4>
-      </div>
-    </div>
-    <div class="col-md-4 mb-3">
-      <div class="stat-box">
-        <h6>⏱ Интервал (мин)</h6>
-        <h4 id="duration">— мин</h4>
-      </div>
-    </div>
+    <div class="col-md-4 mb-3"><div class="stat-box"><h6>📌 Самый большой расход</h6><h4 id="maxLiters">— л</h4></div></div>
+    <div class="col-md-4 mb-3"><div class="stat-box"><h6>🔻 Самый маленький</h6><h4 id="minLiters">— л</h4></div></div>
+    <div class="col-md-4 mb-3"><div class="stat-box"><h6>⏱ Интервал (мин)</h6><h4 id="duration">— мин</h4></div></div>
   </div>
 
   <div class="text-center mb-3">
-    <div class="stat-box d-inline-block">
-      <h6>📅 Измерений всего</h6>
-      <h4 id="count">0</h4>
-    </div>
+    <div class="stat-box d-inline-block"><h6>📅 Измерений всего</h6><h4 id="count">0</h4></div>
   </div>
 
   <div class="mb-5">
@@ -140,23 +104,14 @@
   </div>
 
   <div class="text-end mb-3">
-    <a href="/reset" class="btn btn-danger" onclick="return confirm('Вы уверены, что хотите очистить все данные?')">
-      🗑 Очистить данные
-    </a>
-    <a href="/export" class="btn btn-success">
-      📤 Экспорт в CSV
-    </a>
+    <a href="/reset" class="btn btn-danger" onclick="return confirm('Вы уверены, что хотите очистить все данные?')">🗑 Очистить данные</a>
+    <a href="/export" class="btn btn-success">📤 Экспорт в CSV</a>
   </div>
 
   <h3 class="mb-3">📋 История измерений</h3>
   <div class="table-responsive">
     <table class="table table-striped">
-      <thead>
-        <tr>
-          <th scope="col">Время</th>
-          <th scope="col">Литры</th>
-        </tr>
-      </thead>
+      <thead><tr><th>Время</th><th>Литры</th></tr></thead>
       <tbody id="dataTable"></tbody>
     </table>
   </div>
@@ -168,8 +123,7 @@
 
     async function fetchData() {
       const res = await fetch('/data.json');
-      const data = await res.json();
-      return data;
+      return await res.json();
     }
 
     function formatTime(dateStr) {
@@ -180,12 +134,12 @@
     function updateUI(data) {
       const labels = [];
       const values = [];
+      let sum = 0;
       const table = document.getElementById('dataTable');
       table.innerHTML = '';
-      let sum = 0;
 
       data.forEach(entry => {
-        const time = formatTime(entry.time);
+        const time = formatTime(entry.timestamp || entry.time);
         const val = parseFloat(entry.liters);
         labels.push(time);
         values.push(val);
@@ -194,10 +148,10 @@
       });
 
       const avg = data.length ? (sum / data.length).toFixed(2) : '—';
-      const max = Math.max(...values).toFixed(2);
-      const min = Math.min(...values).toFixed(2);
+      const max = values.length ? Math.max(...values).toFixed(2) : '—';
+      const min = values.length ? Math.min(...values).toFixed(2) : '—';
       const duration = data.length > 1
-        ? Math.round((new Date(data.at(-1).time) - new Date(data[0].time)) / 60000)
+        ? Math.round((new Date(data.at(-1).timestamp || data.at(-1).time) - new Date(data[0].timestamp || data[0].time)) / 60000)
         : 0;
 
       document.getElementById('totalLiters').innerText = sum.toFixed(2) + ' л';
@@ -248,6 +202,13 @@
 
     refresh();
     setInterval(refresh, 5000);
+
+    // WebSocket подключение
+    const socket = io();
+    socket.on('new_data', function (data) {
+      console.log("WS: пришли новые данные", data);
+      refresh();
+    });
   </script>
 </body>
 </html>

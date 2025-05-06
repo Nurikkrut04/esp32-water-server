@@ -1,11 +1,12 @@
-from flask import Flask, request, jsonify, render_template, send_file
+from flask import Flask, request, jsonify, render_template, send_file, Response
+from flask_socketio import SocketIO
 import json
 import datetime
 import os
 import csv
-from flask import Response
 
 app = Flask(__name__)
+socketio = SocketIO(app)  # ⬅ WebSocket поддержка
 
 DATA_FILE = 'data.json'
 
@@ -22,11 +23,10 @@ def save_data(data):
     with open(DATA_FILE, 'w') as f:
         json.dump(data, f)
 
-# Главная страница — график
+# Главная страница
 @app.route('/')
 def index():
-    data = load_data()
-    return render_template('index.html', data=data)
+    return render_template('index.html')
 
 # Получение данных от ESP32
 @app.route('/data', methods=['POST'])
@@ -34,42 +34,40 @@ def receive_data():
     content = request.json
     liters = content.get('liters')
     timestamp = content.get('timestamp', datetime.datetime.now().isoformat())
-    
+
     if liters is not None:
         data = load_data()
-        data.append({'liters': liters, 'timestamp': timestamp})
+        entry = {'liters': liters, 'timestamp': timestamp}
+        data.append(entry)
         save_data(data)
+
+        # Отправляем WebSocket-событие клиентам
+        socketio.emit('new_data', entry)
+
         return jsonify({'status': 'success'}), 200
     else:
         return jsonify({'error': 'No liters value'}), 400
 
+# Отдаём json для графика
 @app.route('/data.json')
 def serve_data():
     return send_file(DATA_FILE, mimetype='application/json')
 
+# Очистка данных
 @app.route('/reset', methods=['GET'])
 def reset_data():
     with open(DATA_FILE, 'w') as f:
         json.dump([], f)
     return "<h3>Данные успешно очищены!</h3>"
 
+# Экспорт в CSV
 @app.route('/export', methods=['GET'])
 def export_csv():
     data = load_data()
-    
-    # Создаем CSV в памяти
-    output = []
-    output.append(['Время', 'Литры'])
-
+    output = [['Время', 'Литры']]
     for entry in data:
-        output.append([entry['time'], entry['liters']])
-
-    # Преобразуем в строку
-    csv_data = '\n'.join([','.join(map(str, row)) for row in output])
-
-    # Добавляем BOM в начало для Excel
-    csv_data = '\ufeff' + csv_data
-
+        output.append([entry.get('timestamp') or entry.get('time'), entry['liters']])
+    csv_data = '\ufeff' + '\n'.join([','.join(map(str, row)) for row in output])
     return Response(
         csv_data,
         mimetype='text/csv; charset=utf-8',
@@ -79,4 +77,4 @@ def export_csv():
 # Запуск сервера
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
-    app.run(host='0.0.0.0', port=port)
+    socketio.run(app, host='0.0.0.0', port=port)
