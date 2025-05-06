@@ -120,24 +120,25 @@
 
   <script>
     let chart;
-
+    let socketConnected = false;
+  
     async function fetchData() {
       const res = await fetch('/data.json');
       return await res.json();
     }
-
+  
     function formatTime(dateStr) {
       const d = new Date(dateStr);
       return d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
     }
-
+  
     function updateUI(data) {
       const labels = [];
       const values = [];
       let sum = 0;
       const table = document.getElementById('dataTable');
       table.innerHTML = '';
-
+  
       data.forEach(entry => {
         const time = formatTime(entry.timestamp || entry.time);
         const val = parseFloat(entry.liters);
@@ -146,14 +147,14 @@
         sum += val;
         table.innerHTML += `<tr><td>${time}</td><td>${val.toFixed(2)}</td></tr>`;
       });
-
+  
       const avg = data.length ? (sum / data.length).toFixed(2) : '—';
       const max = values.length ? Math.max(...values).toFixed(2) : '—';
       const min = values.length ? Math.min(...values).toFixed(2) : '—';
       const duration = data.length > 1
         ? Math.round((new Date(data.at(-1).timestamp || data.at(-1).time) - new Date(data[0].timestamp || data[0].time)) / 60000)
         : 0;
-
+  
       document.getElementById('totalLiters').innerText = sum.toFixed(2) + ' л';
       document.getElementById('avgLiters').innerText = avg + ' л';
       document.getElementById('lastTime').innerText = labels.at(-1) || '—';
@@ -161,7 +162,7 @@
       document.getElementById('maxLiters').innerText = max + ' л';
       document.getElementById('minLiters').innerText = min + ' л';
       document.getElementById('duration').innerText = duration + ' мин';
-
+  
       if (!chart) {
         const ctx = document.getElementById('waterChart').getContext('2d');
         chart = new Chart(ctx, {
@@ -190,25 +191,47 @@
         chart.update();
       }
     }
-
+  
     function toggleMode() {
       document.body.classList.toggle('dark-mode');
     }
-
+  
     async function refresh() {
       const data = await fetchData();
       updateUI(data);
     }
-
+  
+    function connectWebSocket() {
+      const socket = io();
+  
+      socket.on('connect', () => {
+        console.log("WebSocket подключен");
+        socketConnected = true;
+      });
+  
+      socket.on('disconnect', () => {
+        console.warn("WebSocket отключён");
+        socketConnected = false;
+      });
+  
+      socket.on('new_data', function (data) {
+        console.log("WS: пришли новые данные", data);
+        refresh();
+      });
+    }
+  
+    function fallbackPolling() {
+      setInterval(() => {
+        if (!socketConnected) {
+          console.log("Fallback polling активен");
+          refresh();
+        }
+      }, 5000);
+    }
+  
     refresh();
-    setInterval(refresh, 5000);
-
-    // WebSocket подключение
-    const socket = io();
-    socket.on('new_data', function (data) {
-      console.log("WS: пришли новые данные", data);
-      refresh();
-    });
-  </script>
+    connectWebSocket();
+    fallbackPolling();
+  </script>  
 </body>
 </html>
