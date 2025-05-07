@@ -90,12 +90,13 @@ def send_command():
         return jsonify({'error': 'No liters provided'}), 400
 
     try:
-        ESP32_URL = 'http://192.168.1.106/start'  # ЗАМЕНИ на актуальный IP ESP32
+        ESP32_URL = 'http://192.168.1.106/start'
+        print(f"📡 Отправка команды на ESP32: {ESP32_URL}?liters={liters}")
         response = requests.get(ESP32_URL, params={'liters': liters}, timeout=5)
         return jsonify({'status': 'sent', 'esp_response': response.text})
     except requests.exceptions.RequestException as e:
+        print(f"❌ Ошибка запроса к ESP32: {e}")
         return jsonify({'status': 'failed', 'error': str(e)}), 500
-
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
