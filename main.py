@@ -70,7 +70,8 @@ def export_csv():
 
 @app.route('/send-command', methods=['POST'])
 def send_command():
-    liters = request.form.get('liters')
+    data = request.json
+    liters = data.get('liters')
     if not liters:
         return jsonify({'error': 'No liters provided'}), 400
     try:
