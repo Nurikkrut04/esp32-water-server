@@ -93,6 +93,17 @@
     </div>
   </div>
 
+  <div class="stat-box mb-4">
+    <h5>💦 Задать объём воды</h5>
+    <form id="commandForm" onsubmit="sendCommand(event)">
+      <div class="input-group">
+        <input type="number" id="waterAmount" min="0.1" step="0.1" class="form-control" placeholder="Введите литры..." required>
+        <button type="submit" class="btn btn-primary">Отправить</button>
+      </div>
+      <div id="commandStatus" class="form-text mt-2"></div>
+    </form>
+  </div>
+
   <div class="mb-5">
     <canvas id="waterChart" height="120"></canvas>
   </div>
@@ -193,6 +204,24 @@
       console.log("WS: пришли новые данные", data);
       refresh();
     });
+
+    function sendCommand(e) {
+      e.preventDefault();
+      const amount = document.getElementById('waterAmount').value;
+      fetch('/send-command', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ amount: amount })
+      })
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById('commandStatus').innerText = data.status === 'ok'
+          ? 'Команда отправлена!' : 'Ошибка отправки!';
+      })
+      .catch(() => {
+        document.getElementById('commandStatus').innerText = 'Ошибка связи с сервером';
+      });
+    }
   </script>
 </body>
 </html>

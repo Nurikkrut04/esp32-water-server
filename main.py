@@ -4,13 +4,15 @@ import json
 import datetime
 import os
 import csv
+import requests  # ← для отправки команд ESP32
 
 app = Flask(__name__)
-socketio = SocketIO(app)  # ⬅ WebSocket поддержка
+socketio = SocketIO(app)
 
 DATA_FILE = 'data.json'
+ESP32_URL = 'http://192.168.1.123/command'  # IP моего ESP32
 
-# Загрузка данных из файла
+
 def load_data():
     try:
         with open(DATA_FILE, 'r') as f:
@@ -18,17 +20,14 @@ def load_data():
     except:
         return []
 
-# Сохранение данных в файл
 def save_data(data):
     with open(DATA_FILE, 'w') as f:
         json.dump(data, f)
 
-# Главная страница
 @app.route('/')
 def index():
     return render_template('index.html')
 
-# Получение данных от ESP32
 @app.route('/data', methods=['POST'])
 def receive_data():
     content = request.json
@@ -41,26 +40,22 @@ def receive_data():
         data.append(entry)
         save_data(data)
 
-        # Отправляем WebSocket-событие клиентам
         socketio.emit('new_data', entry)
 
         return jsonify({'status': 'success'}), 200
     else:
         return jsonify({'error': 'No liters value'}), 400
 
-# Отдаём json для графика
 @app.route('/data.json')
 def serve_data():
     return send_file(DATA_FILE, mimetype='application/json')
 
-# Очистка данных
 @app.route('/reset', methods=['GET'])
 def reset_data():
     with open(DATA_FILE, 'w') as f:
         json.dump([], f)
     return "<h3>Данные успешно очищены!</h3>"
 
-# Экспорт в CSV
 @app.route('/export', methods=['GET'])
 def export_csv():
     data = load_data()
@@ -74,7 +69,19 @@ def export_csv():
         headers={'Content-Disposition': 'attachment; filename=water_data.csv'}
     )
 
-# Запуск сервера
+# === Отправка команды на ESP32 ===
+@app.route('/send-command', methods=['POST'])
+def send_command():
+    liters = request.form.get('liters')
+    if not liters:
+        return jsonify({'error': 'No liters provided'}), 400
+
+    try:
+        response = requests.post(ESP32_URL, data={'liters': liters}, timeout=5)
+        return jsonify({'status': 'sent', 'esp_response': response.text})
+    except requests.exceptions.RequestException as e:
+        return jsonify({'status': 'failed', 'error': str(e)}), 500
+
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
     socketio.run(app, host='0.0.0.0', port=port, allow_unsafe_werkzeug=True)
