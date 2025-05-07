@@ -15,12 +15,10 @@
       color: #212529;
       transition: background-color 0.3s, color 0.3s;
     }
-
     body.dark-mode {
       background-color: #121212;
       color: #f8f9fa;
     }
-
     .stat-box {
       border-radius: 12px;
       padding: 20px;
@@ -28,39 +26,31 @@
       box-shadow: 0 0 12px rgba(0,0,0,0.05);
       transition: background-color 0.3s, transform 0.3s;
     }
-
     .dark-mode .stat-box {
       background-color: #1e1e1e;
       color: #f8f9fa;
     }
-
     .stat-box:hover {
       transform: translateY(-3px);
       box-shadow: 0 0 18px rgba(0,0,0,0.08);
     }
-
     canvas {
       background: linear-gradient(to bottom, #ffffff, #eef3fb);
       border-radius: 12px;
       padding: 12px;
     }
-
     .dark-mode canvas {
       background: linear-gradient(to bottom, #1e1e1e, #2a2a2a);
     }
-
     .btn {
       transition: all 0.3s ease;
     }
-
     .btn-danger:hover {
       background-color: #c82333;
     }
-
     .btn-success:hover {
       background-color: #218838;
     }
-
     .footer {
       text-align: center;
       margin-top: 50px;
@@ -68,7 +58,6 @@
       font-size: 0.9rem;
       color: gray;
     }
-
     .mode-toggle {
       position: absolute;
       top: 20px;
@@ -84,12 +73,24 @@
   </h1>
 
   <div class="row mb-4 text-center">
-    <div class="col-md-6 mb-3"><div class="stat-box"><h5>Общий расход</h5><h2 id="totalLiters">0.0 л</h2></div></div>
-    <div class="col-md-6 mb-3"><div class="stat-box"><h5>Средний расход</h5><h2 id="avgLiters">— л</h2></div></div>
-  </div>
-
-  <div class="text-center mb-3">
-    <div class="stat-box d-inline-block"><h6>📅 Измерений всего</h6><h4 id="count">0</h4></div>
+    <div class="col-md-4 mb-3">
+      <div class="stat-box">
+        <h5>Общий расход</h5>
+        <h2 id="totalLiters">0.0 л</h2>
+      </div>
+    </div>
+    <div class="col-md-4 mb-3">
+      <div class="stat-box">
+        <h5>Средний расход</h5>
+        <h2 id="avgLiters">— л</h2>
+      </div>
+    </div>
+    <div class="col-md-4 mb-3">
+      <div class="stat-box">
+        <h5>📅 Измерений всего</h5>
+        <h2 id="count">0</h2>
+      </div>
+    </div>
   </div>
 
   <div class="mb-5">
