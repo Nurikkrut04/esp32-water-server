@@ -83,7 +83,7 @@
   <h3 class="mb-3">📋 История измерений</h3>
   <div class="table-responsive">
     <table class="table table-striped">
-      <thead><tr><th>Время</th><th>Литры</th></tr></thead>
+      <thead><tr><th>Время</th><th>Литры</th><th>Импульсы</th></tr></thead>
       <tbody id="dataTable"></tbody>
     </table>
   </div>
@@ -113,14 +113,14 @@
       data.forEach(entry => {
         const time = formatTime(entry.timestamp || entry.time);
         const val = parseFloat(entry.liters);
+        const pulses = entry.pulses ?? '-';
         labels.push(time);
         values.push(val);
         sum += val;
-        table.innerHTML += `<tr><td>${time}</td><td>${val.toFixed(2)}</td></tr>`;
+        table.innerHTML += `<tr><td>${time}</td><td>${val.toFixed(2)}</td><td>${pulses}</td></tr>`;
       });
 
       const avg = data.length ? (sum / data.length).toFixed(2) : '—';
-
       document.getElementById('totalLiters').innerText = sum.toFixed(2) + ' л';
       document.getElementById('avgLiters').innerText = avg + ' л';
       document.getElementById('count').innerText = data.length;
@@ -128,28 +128,28 @@
       if (!chart) {
         const ctx = document.getElementById('waterChart').getContext('2d');
         chart = new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels: labels,
-            datasets: [{
-              label: 'Расход воды (литры)',
-              data: values,
-              borderColor: 'blue',
-              backgroundColor: 'rgba(0,0,255,0.1)',
-              tension: 0.3,
-              fill: true
-            }]
-          },
-          options: {
-            responsive: true,
-            plugins: { legend: { display: true } }
-          }
-        });
-      } else {
-        chart.data.labels = labels;
-        chart.data.datasets[0].data = values;
-        chart.update();
-      }
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Расход воды (литры)',
+            data: values,
+            borderColor: 'blue',
+            backgroundColor: 'rgba(0,0,255,0.1)',
+            tension: 0.3,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: true } }
+        }
+      });
+    } else {
+      chart.data.labels = labels;
+      chart.data.datasets[0].data = values;
+      chart.update();
+    }
     }
 
     function toggleMode() {

@@ -1,14 +1,10 @@
 from flask import Flask, request, jsonify, render_template, send_file, Response
-import json
-import datetime
-import os
-import csv
-import requests  # ← для отправки команд ESP32
+import json, datetime, os, csv, requests
 
 app = Flask(__name__)
 
 DATA_FILE = 'data.json'
-ESP32_URL = 'http://192.168.1.123/command'  # IP моего ESP32
+ESP32_URL = 'http://192.168.39.52/command'
 
 def load_data():
     try:
@@ -29,11 +25,16 @@ def index():
 def receive_data():
     content = request.json
     liters = content.get('liters')
+    pulses = content.get('pulses')
     timestamp = content.get('timestamp', datetime.datetime.now().isoformat())
 
     if liters is not None:
         data = load_data()
-        entry = {'liters': liters, 'timestamp': timestamp}
+        entry = {
+            'liters': liters,
+            'pulses': pulses if pulses is not None else '-',
+            'timestamp': timestamp
+        }
         data.append(entry)
         save_data(data)
         return jsonify({'status': 'success'}), 200
@@ -53,9 +54,13 @@ def reset_data():
 @app.route('/export', methods=['GET'])
 def export_csv():
     data = load_data()
-    output = [['Время', 'Литры']]
+    output = [['Время', 'Литры', 'Импульсы']]
     for entry in data:
-        output.append([entry.get('timestamp') or entry.get('time'), entry['liters']])
+        output.append([
+            entry.get('timestamp') or entry.get('time'),
+            entry['liters'],
+            entry.get('pulses', '-')
+        ])
     csv_data = '\ufeff' + '\n'.join([','.join(map(str, row)) for row in output])
     return Response(
         csv_data,
@@ -63,13 +68,11 @@ def export_csv():
         headers={'Content-Disposition': 'attachment; filename=water_data.csv'}
     )
 
-# === Отправка команды на ESP32 ===
 @app.route('/send-command', methods=['POST'])
 def send_command():
     liters = request.form.get('liters')
     if not liters:
         return jsonify({'error': 'No liters provided'}), 400
-
     try:
         response = requests.post(ESP32_URL, data={'liters': liters}, timeout=5)
         return jsonify({'status': 'sent', 'esp_response': response.text})
