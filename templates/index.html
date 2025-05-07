@@ -165,10 +165,10 @@
     setInterval(refresh, 5000);
 
     function sendCommand(e) {
-      e.preventDefault();
-      const amount = document.getElementById('waterAmount').value;
+    e.preventDefault();
+    const amount = document.getElementById('waterAmount').value;
 
-      fetch('/send-command', {
+      fetch('http://192.168.1.102:10000/send-command', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded'
