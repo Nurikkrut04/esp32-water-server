@@ -1,5 +1,4 @@
 from flask import Flask, request, jsonify, render_template, send_file, Response
-from flask_socketio import SocketIO
 import json
 import datetime
 import os
@@ -7,11 +6,9 @@ import csv
 import requests  # ← для отправки команд ESP32
 
 app = Flask(__name__)
-socketio = SocketIO(app)
 
 DATA_FILE = 'data.json'
 ESP32_URL = 'http://192.168.1.123/command'  # IP моего ESP32
-
 
 def load_data():
     try:
@@ -39,9 +36,6 @@ def receive_data():
         entry = {'liters': liters, 'timestamp': timestamp}
         data.append(entry)
         save_data(data)
-
-        socketio.emit('new_data', entry)
-
         return jsonify({'status': 'success'}), 200
     else:
         return jsonify({'error': 'No liters value'}), 400
@@ -84,4 +78,4 @@ def send_command():
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
-    socketio.run(app, host='0.0.0.0', port=port, allow_unsafe_werkzeug=True)
+    app.run(host='0.0.0.0', port=port)
