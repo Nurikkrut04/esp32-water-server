@@ -165,25 +165,25 @@
     setInterval(refresh, 5000); // 🔁 обновляем каждые 5 секунд
 
     function sendCommand(e) {
-      e.preventDefault();
-      const amount = document.getElementById('waterAmount').value;
+    e.preventDefault();
+    const amount = document.getElementById('waterAmount').value;
 
-      const formData = new FormData();
-      formData.append('liters', amount);
+    const formData = new FormData();
+    formData.append('liters', amount);  // ✅ теперь ключ правильный
 
-      fetch('/send-command', {
-        method: 'POST',
-        body: formData
-      })
-      .then(res => res.json())
-      .then(data => {
-        document.getElementById('commandStatus').innerText = data.status === 'sent'
-          ? 'Команда отправлена!' : 'Ошибка отправки!';
-      })
-      .catch(() => {
-        document.getElementById('commandStatus').innerText = 'Ошибка связи с сервером';
-      });
-    }
+    fetch('/send-command', {
+      method: 'POST',
+      body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById('commandStatus').innerText =
+        data.status === 'sent' ? 'Команда отправлена!' : 'Ошибка отправки!';
+    })
+    .catch(() => {
+      document.getElementById('commandStatus').innerText = 'Ошибка связи с сервером';
+    });
+  }
   </script>
 </body>
 </html>
