@@ -90,7 +90,7 @@ def send_command():
         return jsonify({'error': 'No liters provided'}), 400
 
     try:
-        ESP32_URL = 'http://192.168.1.123/command'  # IP ESP32
+        ESP32_URL = 'http://192.168.1.106/command'  # IP ESP32
         response = requests.post(ESP32_URL, data={'liters': liters}, timeout=5)
         return jsonify({'status': 'sent', 'esp_response': response.text})
     except requests.exceptions.RequestException as e:
