@@ -168,7 +168,7 @@
     e.preventDefault();
     const amount = document.getElementById('waterAmount').value;
 
-      fetch('http://192.168.1.102:10000/send-command', {
+      fetch('https://beff-82-200-168-85.ngrok-free.app/send-command', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded'

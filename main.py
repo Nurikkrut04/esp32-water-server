@@ -1,7 +1,9 @@
 from flask import Flask, request, jsonify, render_template, send_file, Response
+from flask_cors import CORS
 import sqlite3, datetime, csv, os
 
 app = Flask(__name__)
+CORS(app)
 DB_FILE = 'data.db'
 
 # === Инициализация БД ===
@@ -89,7 +91,7 @@ def send_command():
         return jsonify({'error': 'No liters provided'}), 400
 
     try:
-        ESP32_URL = 'http://192.168.1.106/start'
+        ESP32_URL = 'http://10.82.166.241/start'
         print(f"📡 Отправка команды на ESP32: {ESP32_URL}?liters={liters}")
         response = requests.get(ESP32_URL, params={'liters': liters}, timeout=5)
         return jsonify({'status': 'sent', 'esp_response': response.text})
