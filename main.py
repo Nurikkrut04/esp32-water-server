@@ -1,4 +1,3 @@
-# app.py — сервер с SQLite
 from flask import Flask, request, jsonify, render_template, send_file, Response
 import sqlite3, datetime, csv, os
 
